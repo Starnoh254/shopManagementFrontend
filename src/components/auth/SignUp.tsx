@@ -1,12 +1,14 @@
 import React, { useState } from "react";
 import axiosInstance from "../../api/axios";
 import axios from "axios";
+import { useNavigate } from "react-router-dom";
 
 const SignUp: React.FC = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -22,6 +24,10 @@ const SignUp: React.FC = () => {
       }
     }
   };
+
+  const navigateToLogin = () => {
+    navigate("/login")
+  }
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-background-light dark:bg-background-dark font-sans transition-colors duration-300">
@@ -84,6 +90,8 @@ const SignUp: React.FC = () => {
         >
           Sign Up
         </button>
+
+        <span className="text-blue-600 text-center flex justify-center mt-4 cursor-pointer underline" onClick={navigateToLogin}>Already have an Account ? Login</span>
       </form>
     </div>
   );
