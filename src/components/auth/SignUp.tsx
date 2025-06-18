@@ -25,6 +25,7 @@ const SignUp: React.FC = () => {
     }
   };
 
+  // navigate to login endpoint
   const navigateToLogin = () => {
     navigate("/login")
   }
