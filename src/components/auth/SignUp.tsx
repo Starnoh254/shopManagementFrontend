@@ -14,7 +14,7 @@ const SignUp: React.FC = () => {
     e.preventDefault();
     setError(null);
     try {
-      await axiosInstance.post("/auth/signup", { name, email, password });
+      await axiosInstance.post("/auth/register", { email, password });
       alert("Sign up successful! Please log in.");
     } catch (err) {
       if (axios.isAxiosError(err)) {
