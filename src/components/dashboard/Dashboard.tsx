@@ -4,6 +4,12 @@ import { Link, Outlet } from "react-router-dom";
 const Dashboard: React.FC = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
+  // Function to handle navigation link clicks
+  const handleLinkClick = () => {
+    // Close sidebar on mobile when a link is clicked
+    setSidebarOpen(false);
+  };
+
   return (
     <div className="min-h-screen bg-background-light dark:bg-background-dark flex transition-colors duration-300">
       {/* Sidebar */}
@@ -23,23 +29,75 @@ const Dashboard: React.FC = () => {
         <nav className="p-4 space-y-2">
           <Link
             to="/dashboard"
-            className="block px-4 py-2 rounded hover:bg-primary-light hover:text-white dark:hover:bg-primary-dark"
+            className="flex items-center px-4 py-2 rounded hover:bg-primary-light hover:text-white dark:hover:bg-primary-dark transition-colors"
+            onClick={handleLinkClick}
           >
-            Home
+            <span className="mr-3">🏠</span>
+            Dashboard Home
           </Link>
           <Link
-            to="new-debt"
-            className="block px-4 py-2 rounded hover:bg-primary-light hover:text-white dark:hover:bg-primary-dark"
+            to="customers"
+            className="flex items-center px-4 py-2 rounded hover:bg-primary-light hover:text-white dark:hover:bg-primary-dark transition-colors"
+            onClick={handleLinkClick}
           >
-            Add Debt
+            <span className="mr-3">👥</span>
+            Customers
           </Link>
-          {/* <Link
+          <Link
             to="debts"
-            className="block px-4 py-2 rounded hover:bg-primary-light hover:text-white dark:hover:bg-primary-dark"
+            className="flex items-center px-4 py-2 rounded hover:bg-primary-light hover:text-white dark:hover:bg-primary-dark transition-colors"
+            onClick={handleLinkClick}
           >
+            <span className="mr-3">💰</span>
             Debts
-          </Link> */}
-          {/* Add more links as needed */}
+          </Link>
+          <Link
+            to="payments"
+            className="flex items-center px-4 py-2 rounded hover:bg-primary-light hover:text-white dark:hover:bg-primary-dark transition-colors"
+            onClick={handleLinkClick}
+          >
+            <span className="mr-3">💳</span>
+            Payments
+          </Link>
+          <Link
+            to="reports"
+            className="flex items-center px-4 py-2 rounded hover:bg-primary-light hover:text-white dark:hover:bg-primary-dark transition-colors"
+            onClick={handleLinkClick}
+          >
+            <span className="mr-3">📊</span>
+            Reports
+          </Link>
+
+          {/* Quick Actions Section */}
+          <div className="pt-4 mt-4 border-t border-gray-200 dark:border-gray-700">
+            <h3 className="px-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
+              Quick Actions
+            </h3>
+            <Link
+              to="customers?action=create"
+              className="flex items-center px-4 py-2 rounded hover:bg-green-600 hover:text-white transition-colors text-green-600 dark:text-green-400"
+              onClick={handleLinkClick}
+            >
+              <span className="mr-3">➕</span>
+              Add Customer
+            </Link>
+            <Link
+              to="debts?action=create"
+              className="flex items-center px-4 py-2 rounded hover:bg-blue-600 hover:text-white transition-colors text-blue-600 dark:text-blue-400"
+              onClick={handleLinkClick}
+            >
+              <span className="mr-3">💸</span>
+              Record Debt
+            </Link>
+            <Link
+              to="payments?action=create"
+              className="flex items-center px-4 py-2 rounded hover:bg-purple-600 hover:text-white transition-colors text-purple-600 dark:text-purple-400"
+              onClick={handleLinkClick}
+            >
+              <span className="mr-3">💵</span>
+              Record Payment
+            </Link>
+          </div>
         </nav>
       </aside>
 

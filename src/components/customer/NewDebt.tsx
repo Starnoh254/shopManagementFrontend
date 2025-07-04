@@ -1,100 +1,204 @@
 import React, { useState } from "react";
-import axiosInstance from "../../api/axios"; // your axios setup
+import axiosInstance from "../../api/axios";
 import { getAuthHeaders } from "../../utils/getAuthHeaders";
+import axios from "axios";
+import Button from "../ui/Button";
+import Input from "../ui/Input";
+import Textarea from "../ui/Textarea";
 
-const NewDebt: React.FC = () => {
-  const [name, setName] = useState("");
-  const [phone, setPhone] = useState("");
-  const [amount, setAmount] = useState<number>(0);
+interface NewDebtProps {
+  onSuccess?: () => void;
+  onCancel?: () => void;
+}
 
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
+const NewDebt: React.FC<NewDebtProps> = ({ onSuccess, onCancel }) => {
+  const [formData, setFormData] = useState({
+    name: "",
+    phone: "",
+    amount: "",
+    description: "",
+  });
+  const [errors, setErrors] = useState<{ [key: string]: string }>({});
+  const [isLoading, setIsLoading] = useState(false);
+
+  const validateForm = () => {
+    const newErrors: { [key: string]: string } = {};
+
+    if (!formData.name.trim()) {
+      newErrors.name = "Name is required";
+    }
+
+    if (!formData.phone.trim()) {
+      newErrors.phone = "Phone number is required";
+    } else if (!/^\+?[\d\s-()]+$/.test(formData.phone)) {
+      newErrors.phone = "Please enter a valid phone number";
+    }
+
+    if (!formData.amount) {
+      newErrors.amount = "Amount is required";
+    } else if (Number(formData.amount) <= 0) {
+      newErrors.amount = "Amount must be greater than 0";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+
+    // Clear error when user starts typing
+    if (errors[name]) {
+      setErrors((prev) => ({ ...prev, [name]: "" }));
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
-    setSuccess(null);
 
+    if (!validateForm()) {
+      return;
+    }
+
+    setIsLoading(true);
     try {
       await axiosInstance.post(
         "/customer/add",
-        { name, phone, amount },
+        {
+          name: formData.name.trim(),
+          phone: formData.phone.trim(),
+          amount: Number(formData.amount),
+          status: "active",
+          description: formData.description.trim() || undefined,
+        },
         {
           headers: getAuthHeaders(),
         }
       );
-      setSuccess("Debt record added successfully ✅");
-      setName("");
-      setPhone("");
-      setAmount(0);
+
+      // Reset form
+      setFormData({ name: "", phone: "", amount: "", description: "" });
+
+      // Call success callback if provided
+      if (onSuccess) {
+        onSuccess();
+      }
     } catch (err) {
-      setError("Something went wrong. Please try again.");
-      console.log(`Something went wrong : ${err}`);
+      if (axios.isAxiosError(err)) {
+        const message = err.response?.data?.message || "Failed to add debt";
+        setErrors({ submit: message });
+      } else {
+        setErrors({ submit: "Failed to add debt" });
+      }
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-100 dark:bg-gray-900">
-      <form
-        onSubmit={handleSubmit}
-        className="bg-white dark:bg-gray-800 p-8 rounded-xl shadow-lg w-full max-w-md"
-      >
-        <h2 className="text-2xl font-bold mb-6 text-center text-gray-800 dark:text-white">
+    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 w-full max-w-md">
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-xl font-bold text-gray-900 dark:text-white">
           Add New Debt
         </h2>
-
-        {error && (
-          <p className="text-red-500 text-sm mb-4 text-center">{error}</p>
+        {onCancel && (
+          <button
+            onClick={onCancel}
+            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+            disabled={isLoading}
+          >
+            ✕
+          </button>
         )}
-        {success && (
-          <p className="text-green-500 text-sm mb-4 text-center">{success}</p>
+      </div>
+
+      <form onSubmit={handleSubmit} className="space-y-4">
+        {/* Name Field */}
+        <Input
+          name="name"
+          label="Customer Name"
+          value={formData.name}
+          onChange={handleInputChange}
+          placeholder="Enter customer name"
+          disabled={isLoading}
+          error={errors.name}
+          required
+        />
+
+        {/* Phone Field */}
+        <Input
+          type="tel"
+          name="phone"
+          label="Phone Number"
+          value={formData.phone}
+          onChange={handleInputChange}
+          placeholder="+254712345678"
+          disabled={isLoading}
+          error={errors.phone}
+          required
+        />
+
+        {/* Amount Field */}
+        <Input
+          type="number"
+          name="amount"
+          label="Amount (Ksh)"
+          value={formData.amount}
+          onChange={handleInputChange}
+          min="0"
+          step="0.01"
+          placeholder="0.00"
+          disabled={isLoading}
+          error={errors.amount}
+          required
+        />
+
+        {/* Description Field */}
+        <Textarea
+          name="description"
+          label="Description"
+          value={formData.description}
+          onChange={handleInputChange}
+          rows={3}
+          placeholder="What was this debt for?"
+          disabled={isLoading}
+          helperText="Optional: Add a description for this debt"
+        />
+
+        {/* Submit Error */}
+        {errors.submit && (
+          <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md">
+            <p className="text-sm text-red-600 dark:text-red-400">
+              {errors.submit}
+            </p>
+          </div>
         )}
 
-        <div className="mb-4">
-          <label className="block text-gray-700 dark:text-gray-200 mb-1">
-            Customer Name
-          </label>
-          <input
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            required
-            className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary text-gray-900"
-          />
+        {/* Action Buttons */}
+        <div className="flex gap-3 pt-4">
+          {onCancel && (
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={onCancel}
+              disabled={isLoading}
+              className="flex-1"
+            >
+              Cancel
+            </Button>
+          )}
+          <Button
+            type="submit"
+            variant="primary"
+            isLoading={isLoading}
+            className={onCancel ? "flex-1" : "w-full"}
+          >
+            Add Debt
+          </Button>
         </div>
-
-        <div className="mb-4">
-          <label className="block text-gray-700 dark:text-gray-200 mb-1">
-            Phone Number
-          </label>
-          <input
-            type="tel"
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            required
-            className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary text-gray-900"
-          />
-        </div>
-
-        <div className="mb-6">
-          <label className="block text-gray-700 dark:text-gray-200 mb-1">
-            Amount Owed
-          </label>
-          <input
-            type="number"
-            value={amount}
-            onChange={(e) => setAmount(parseFloat(e.target.value))}
-            required
-            className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary text-gray-900"
-          />
-        </div>
-
-        <button
-          type="submit"
-          className="w-full bg-blue-700 text-white py-2 rounded-md hover:bg-primary-dark transition"
-        >
-          Add Debt
-        </button>
       </form>
     </div>
   );

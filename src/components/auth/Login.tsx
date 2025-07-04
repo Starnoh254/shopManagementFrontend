@@ -1,83 +1,157 @@
 import React, { useState } from "react";
-import axiosInstance from "../../api/axios";
-import axios from "axios";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
+import { authService } from "../../services/authService";
+import Button from "../ui/Button";
+import Input from "../ui/Input";
 
 const Login: React.FC = () => {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState<string | null>(null);
+  const [formData, setFormData] = useState({
+    email: "",
+    password: "",
+  });
+  const [errors, setErrors] = useState<{ [key: string]: string }>({});
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+
+  const validateForm = (): boolean => {
+    const newErrors: { [key: string]: string } = {};
+
+    if (!formData.email.trim()) {
+      newErrors.email = "Email is required";
+    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+      newErrors.email = "Please enter a valid email address";
+    }
+
+    if (!formData.password) {
+      newErrors.password = "Password is required";
+    } else if (formData.password.length < 6) {
+      newErrors.password = "Password must be at least 6 characters";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+
+    // Clear error when user starts typing
+    if (errors[name]) {
+      setErrors((prev) => ({ ...prev, [name]: "" }));
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
+
+    if (!validateForm()) {
+      return;
+    }
+
+    setIsLoading(true);
     try {
-      const response = await axiosInstance.post("/auth/login", {
-        email,
-        password,
+      const response = await authService.login({
+        email: formData.email.trim(),
+        password: formData.password,
       });
-      localStorage.setItem("token", response.data.result.token);
-    //   alert("Login successful!");
-      navigate("/dashboard");
-    } catch (err) {
-      if (axios.isAxiosError(err)) {
-        setError(err.response?.data?.message || "Login failed");
+
+      if (response.success && response.token && response.user) {
+        // Store token and user data
+        localStorage.setItem("token", response.token);
+        localStorage.setItem("user", JSON.stringify(response.user));
+
+        // Navigate to dashboard
+        navigate("/dashboard");
       } else {
-        setError("Login failed");
+        setErrors({ submit: response.message || "Login failed" });
       }
+    } catch (error) {
+      const message =
+        error instanceof Error &&
+        "response" in error &&
+        typeof error.response === "object" &&
+        error.response !== null &&
+        "data" in error.response &&
+        typeof error.response.data === "object" &&
+        error.response.data !== null &&
+        "message" in error.response.data &&
+        typeof error.response.data.message === "string"
+          ? error.response.data.message
+          : "Login failed. Please try again.";
+      setErrors({ submit: message });
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-background-light dark:bg-background-dark font-sans transition-colors duration-300">
-      <form
-        onSubmit={handleSubmit}
-        className="bg-white dark:bg-gray-900 p-8 rounded-xl shadow-lg w-full max-w-md border dark:border-gray-700"
-      >
-        <h2 className="text-2xl font-bold mb-6 text-center text-text-light dark:text-text-dark">
-          Login
-        </h2>
+      <div className="bg-white dark:bg-gray-900 p-8 rounded-xl shadow-lg w-full max-w-md border dark:border-gray-700">
+        <div className="text-center mb-8">
+          <h2 className="text-2xl font-bold text-text-light dark:text-text-dark">
+            Welcome Back
+          </h2>
+          <p className="text-gray-600 dark:text-gray-400 mt-2">
+            Sign in to your account
+          </p>
+        </div>
 
-        {error && (
-          <div className="mb-4 text-red-500 text-sm text-center">
-            {error}
-          </div>
-        )}
-
-        <div className="mb-4">
-          <label className="block text-text-light dark:text-text-dark mb-1">
-            Email
-          </label>
-          <input
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <Input
             type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            name="email"
+            label="Email Address"
+            value={formData.email}
+            onChange={handleInputChange}
+            placeholder="Enter your email"
+            disabled={isLoading}
+            error={errors.email}
             required
-            className="w-full px-4 py-2 border rounded-md bg-white dark:bg-gray-800 dark:text-white border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-primary-light dark:focus:ring-primary-dark"
           />
-        </div>
 
-        <div className="mb-6">
-          <label className="block text-text-light dark:text-text-dark mb-1">
-            Password
-          </label>
-          <input
+          <Input
             type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
+            name="password"
+            label="Password"
+            value={formData.password}
+            onChange={handleInputChange}
+            placeholder="Enter your password"
+            disabled={isLoading}
+            error={errors.password}
             required
-            className="w-full px-4 py-2 border rounded-md bg-white dark:bg-gray-800 dark:text-white border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-primary-light dark:focus:ring-primary-dark"
           />
-        </div>
 
-        <button
-          type="submit"
-          className="w-full bg-primary-light dark:bg-primary-dark text-white py-2 rounded-md hover:bg-blue-700 dark:hover:bg-blue-500 transition"
-        >
-          Login
-        </button>
-      </form>
+          {errors.submit && (
+            <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md">
+              <p className="text-sm text-red-600 dark:text-red-400">
+                {errors.submit}
+              </p>
+            </div>
+          )}
+
+          <Button
+            type="submit"
+            variant="primary"
+            isLoading={isLoading}
+            className="w-full"
+          >
+            Sign In
+          </Button>
+        </form>
+
+        <div className="mt-6 text-center">
+          <p className="text-gray-600 dark:text-gray-400 text-sm">
+            Don't have an account?{" "}
+            <Link
+              to="/"
+              className="text-primary-light dark:text-primary-dark hover:underline font-medium"
+            >
+              Sign up here
+            </Link>
+          </p>
+        </div>
+      </div>
     </div>
   );
 };
