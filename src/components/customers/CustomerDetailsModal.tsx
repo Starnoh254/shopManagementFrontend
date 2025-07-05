@@ -24,7 +24,9 @@ const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({
   const [debts, setDebts] = useState<Debt[]>([]);
   const [payments, setPayments] = useState<Payment[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState<"overview" | "debts" | "payments">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "debts" | "payments">(
+    "overview"
+  );
 
   const fetchCustomerData = async () => {
     if (!customer) {
@@ -82,9 +84,16 @@ const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({
     return null;
   }
 
-  const totalPayments = payments.reduce((sum, payment) => sum + payment.amount, 0);
-  const activeDebts = debts.filter(debt => !debt.isPaid && (debt.remainingAmount || debt.amount) > 0);
-  const paidDebts = debts.filter(debt => debt.isPaid || (debt.remainingAmount || debt.amount) <= 0);
+  const totalPayments = payments.reduce(
+    (sum, payment) => sum + payment.amount,
+    0
+  );
+  const activeDebts = debts.filter(
+    (debt) => !debt.isPaid && (debt.remainingAmount || debt.amount) > 0
+  );
+  const paidDebts = debts.filter(
+    (debt) => debt.isPaid || (debt.remainingAmount || debt.amount) <= 0
+  );
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} size="lg">
@@ -169,12 +178,8 @@ const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({
                           Status
                         </label>
                         <div className="mt-1 flex items-center gap-2">
-                          <div
-                            className="bg-green-500"
-                          />
-                          <span
-                            className="px-2 py-1 rounded-full text-xs font-medium bg-green-400 text-green-800 dark:bg-green-900 dark:text-green-200"
-                          >
+                          <div className="bg-green-500" />
+                          <span className="px-2 py-1 rounded-full text-xs font-medium bg-green-400 text-green-800 dark:bg-green-900 dark:text-green-200">
                             Active
                           </span>
                         </div>
@@ -223,7 +228,9 @@ const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({
                               }`}
                             >
                               {customer.balance.netBalance > 0 ? "+" : ""}
-                              {formatCurrency(Math.abs(customer.balance.netBalance))}
+                              {formatCurrency(
+                                Math.abs(customer.balance.netBalance)
+                              )}
                             </p>
                           </div>
                         </>
@@ -262,8 +269,10 @@ const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({
                         </p>
                       </div>
                       <div className="text-center min-w-0">
-                        <p className="text-lg lg:text-sm
-                         font-bold text-green-600 dark:text-green-400 break-words">
+                        <p
+                          className="text-lg lg:text-sm
+                         font-bold text-green-600 dark:text-green-400 break-words"
+                        >
                           {formatCurrency(totalPayments)}
                         </p>
                         <p className="text-xs lg:text-sm text-gray-600 dark:text-gray-400">
@@ -308,7 +317,9 @@ const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({
                                   </div>
                                   <div className="text-right">
                                     <p className="font-semibold text-red-600 dark:text-red-400">
-                                      {formatCurrency(debt.remainingAmount || debt.amount)}
+                                      {formatCurrency(
+                                        debt.remainingAmount || debt.amount
+                                      )}
                                     </p>
                                     <p className="text-xs text-gray-500 dark:text-gray-400">
                                       of {formatCurrency(debt.amount)}
@@ -389,7 +400,9 @@ const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({
                                       : "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
                                   }`}
                                 >
-                                  {payment.method ? payment.method.replace("_", " ") : "N/A"}
+                                  {payment.method
+                                    ? payment.method.replace("_", " ")
+                                    : "N/A"}
                                 </span>
                                 <p className="text-sm text-gray-600 dark:text-gray-400">
                                   {formatDateTime(payment.createdAt)}
@@ -400,15 +413,25 @@ const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({
                               <p className="font-semibold text-green-600 dark:text-green-400">
                                 {formatCurrency(payment.amount || 0)}
                               </p>
-                              {(payment.appliedToDebt !== undefined && payment.appliedToDebt > 0) || 
-                               (payment.creditAmount !== undefined && payment.creditAmount > 0) ? (
+                              {(payment.appliedToDebt !== undefined &&
+                                payment.appliedToDebt > 0) ||
+                              (payment.creditAmount !== undefined &&
+                                payment.creditAmount > 0) ? (
                                 <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                                  {payment.appliedToDebt !== undefined && payment.appliedToDebt > 0 && (
-                                    <p>Applied: {formatCurrency(payment.appliedToDebt)}</p>
-                                  )}
-                                  {payment.creditAmount !== undefined && payment.creditAmount > 0 && (
-                                    <p>Credit: {formatCurrency(payment.creditAmount)}</p>
-                                  )}
+                                  {payment.appliedToDebt !== undefined &&
+                                    payment.appliedToDebt > 0 && (
+                                      <p>
+                                        Applied:{" "}
+                                        {formatCurrency(payment.appliedToDebt)}
+                                      </p>
+                                    )}
+                                  {payment.creditAmount !== undefined &&
+                                    payment.creditAmount > 0 && (
+                                      <p>
+                                        Credit:{" "}
+                                        {formatCurrency(payment.creditAmount)}
+                                      </p>
+                                    )}
                                 </div>
                               ) : null}
                             </div>
