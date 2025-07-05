@@ -3,6 +3,8 @@ import type { Customer } from "../../services/customerService";
 import { customerService } from "../../services/customerService";
 import CustomerCard from "./CustomerCard";
 import CreateCustomerModal from "./CreateCustomerModal";
+import EditCustomerModal from "./EditCustomerModal";
+import CustomerDetailsModal from "./CustomerDetailsModal";
 import LoadingState from "../ui/LoadingState";
 import EmptyState from "../ui/EmptyState";
 import Button from "../ui/Button";
@@ -18,6 +20,9 @@ const CustomerList: React.FC = () => {
     "ALL" | "ACTIVE" | "INACTIVE"
   >("ALL");
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
 
   const fetchCustomers = async () => {
     setIsLoading(true);
@@ -76,13 +81,33 @@ const CustomerList: React.FC = () => {
   };
 
   const handleViewCustomer = (customer: Customer) => {
-    // Navigate to customer details page
-    console.log("View customer:", customer);
+    setSelectedCustomer(customer);
+    setShowDetailsModal(true);
   };
 
   const handleEditCustomer = (customer: Customer) => {
-    // Open edit modal
-    console.log("Edit customer:", customer);
+    setSelectedCustomer(customer);
+    setShowEditModal(true);
+  };
+
+  const handleCustomerUpdated = (updatedCustomer: Customer) => {
+    setCustomers((prev) =>
+      prev.map((customer) =>
+        customer.id === updatedCustomer.id ? updatedCustomer : customer
+      )
+    );
+    setShowEditModal(false);
+    setSelectedCustomer(null);
+  };
+
+  const handleEditFromDetails = () => {
+    setShowDetailsModal(false);
+    setShowEditModal(true);
+  };
+
+  const handleCreditApplied = () => {
+    // Refresh customers data to show updated balances
+    fetchCustomers();
   };
 
   const handleDeleteCustomer = async (customer: Customer) => {
@@ -185,6 +210,7 @@ const CustomerList: React.FC = () => {
               onView={handleViewCustomer}
               onEdit={handleEditCustomer}
               onDelete={handleDeleteCustomer}
+              onCreditApplied={handleCreditApplied}
             />
           ))}
         </div>
@@ -195,6 +221,28 @@ const CustomerList: React.FC = () => {
         isOpen={showCreateModal}
         onClose={() => setShowCreateModal(false)}
         onSuccess={handleCustomerCreated}
+      />
+
+      {/* Edit Customer Modal */}
+      <EditCustomerModal
+        isOpen={showEditModal}
+        onClose={() => {
+          setShowEditModal(false);
+          setSelectedCustomer(null);
+        }}
+        onSuccess={handleCustomerUpdated}
+        customer={selectedCustomer}
+      />
+
+      {/* Customer Details Modal */}
+      <CustomerDetailsModal
+        isOpen={showDetailsModal}
+        onClose={() => {
+          setShowDetailsModal(false);
+          setSelectedCustomer(null);
+        }}
+        customer={selectedCustomer}
+        onEdit={handleEditFromDetails}
       />
     </div>
   );

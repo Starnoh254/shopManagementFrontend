@@ -7,9 +7,52 @@ export interface Payment {
   customerName?: string;
   debtId: number;
   amount: number;
+  appliedToDebt?: number; // Amount applied to debt (for overpayments)
+  creditAmount?: number; // Amount added to credit balance
   method: "CASH" | "MOBILE_MONEY";
   description: string;
   createdAt: string;
+}
+
+export interface PaymentResponse {
+  success: boolean;
+  message: string;
+  payment: {
+    id: number;
+    amount: number;
+    appliedToDebt: number;
+    creditAmount: number;
+    paymentMethod: string;
+  };
+  summary: {
+    totalPaid: number;
+    appliedToDebt: number;
+    creditAdded: number;
+    previousCredit: number;
+    newCreditBalance: number;
+    remainingDebt: number;
+  };
+}
+
+export interface CreditApplicationResponse {
+  success: boolean;
+  message: string;
+  summary: {
+    creditApplied: number;
+    previousCreditBalance: number;
+    newCreditBalance: number;
+    debtsPaid: Array<{
+      debtId: number;
+      amount: number;
+      description: string;
+      partial: boolean;
+    }>;
+    remainingDebt: number;
+  };
+}
+
+export interface ApplyCreditRequest {
+  creditAmount?: number; // Optional: specific amount to apply
 }
 
 export interface PaymentWithDetails extends Payment {
@@ -27,7 +70,7 @@ export interface PaymentWithDetails extends Payment {
 
 export interface CreatePaymentRequest {
   customerId: number;
-  debtId: number;
+  debtId?: number; // Make optional for general payments
   amount: number;
   method: "CASH" | "MOBILE_MONEY";
   description?: string;
@@ -51,9 +94,23 @@ export interface PaymentSummary {
 
 export const paymentService = {
   // Record a new payment (POST /payments/record)
-  record: async (paymentData: CreatePaymentRequest): Promise<Payment> => {
+  record: async (
+    paymentData: CreatePaymentRequest
+  ): Promise<PaymentResponse> => {
     const response = await api.post("/payments/record", paymentData);
-    return response.data.payment;
+    return response.data;
+  },
+
+  // Apply credit to customer debts (POST /payments/apply-credit/:customerId)
+  applyCredit: async (
+    customerId: number,
+    requestData?: ApplyCreditRequest
+  ): Promise<CreditApplicationResponse> => {
+    const response = await api.post(
+      `/payments/apply-credit/${customerId}`,
+      requestData || {}
+    );
+    return response.data;
   },
 
   // Get all payments for a specific customer (GET /payments/customer/:customerId)
@@ -104,7 +161,18 @@ export const paymentService = {
 
   // Legacy alias for backward compatibility
   create: async (paymentData: CreatePaymentRequest): Promise<Payment> => {
-    return paymentService.record(paymentData);
+    const response = await paymentService.record(paymentData);
+    return {
+      id: response.payment.id,
+      customerId: paymentData.customerId,
+      debtId: paymentData.debtId || 0,
+      amount: response.payment.amount,
+      appliedToDebt: response.payment.appliedToDebt,
+      creditAmount: response.payment.creditAmount,
+      method: response.payment.paymentMethod as "CASH" | "MOBILE_MONEY",
+      description: paymentData.description || "",
+      createdAt: new Date().toISOString(),
+    };
   },
 
   // Legacy alias for backward compatibility

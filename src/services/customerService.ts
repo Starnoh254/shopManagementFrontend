@@ -6,9 +6,16 @@ export interface Customer {
   name: string;
   phone: string;
   totalDebt?: number; // Make optional since backend might not provide it
+  creditBalance?: number; // New field for credit balance
   status: "ACTIVE" | "INACTIVE";
   createdAt: string;
   lastPaymentDate?: string;
+  balance?: {
+    totalDebt: number;
+    creditBalance: number;
+    netBalance: number;
+    status: "DEBT" | "CREDIT" | "BALANCED";
+  };
 }
 
 export interface CustomerWithDetails extends Customer {
