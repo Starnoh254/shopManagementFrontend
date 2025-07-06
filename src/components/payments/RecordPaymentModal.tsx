@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import type { Debt } from "../../services/debtService";
-import type { PaymentResponse } from "../../services/paymentService";
+import type { Payment } from "../../services/paymentService";
 import { paymentService } from "../../services/paymentService";
 import Button from "../ui/Button";
 import Input from "../ui/Input";
@@ -10,7 +10,7 @@ import Modal from "../ui/Modal";
 interface RecordPaymentModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSuccess: (response: PaymentResponse) => void;
+  onSuccess: (payment: Payment) => void;
   debt: Debt | null;
 }
 
@@ -35,8 +35,14 @@ const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({
       newErrors.amount = "Payment amount is required";
     } else if (Number(formData.amount) <= 0) {
       newErrors.amount = "Payment amount must be greater than 0";
+    } else if (
+      debt &&
+      Number(formData.amount) > (debt.remainingAmount || debt.amount)
+    ) {
+      newErrors.amount = `Payment cannot exceed remaining debt of ${
+        debt.remainingAmount || debt.amount
+      }`;
     }
-    // Removed maximum payment restriction to allow overpayments
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -65,7 +71,7 @@ const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({
 
     setIsLoading(true);
     try {
-      const response = await paymentService.record({
+      const payment = await paymentService.create({
         customerId: debt.customerId,
         debtId: debt.id,
         amount: Number(formData.amount),
@@ -83,17 +89,7 @@ const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({
       });
       setErrors({});
 
-      // Show overpayment notification if applicable
-      if (response.summary.creditAdded > 0) {
-        console.log(
-          `Payment recorded successfully! ${formatCurrency(
-            response.summary.creditAdded
-          )} was added to the customer's credit balance.`
-        );
-        // You can replace this with a toast notification system
-      }
-
-      onSuccess(response);
+      onSuccess(payment);
       onClose();
     } catch (error) {
       const err = error as { response?: { data?: { message?: string } } };
@@ -194,13 +190,14 @@ const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({
             value={formData.amount}
             onChange={handleInputChange}
             min="0"
+            max={debt.remainingAmount || debt.amount}
             step="0.01"
             placeholder="0.00"
             disabled={isLoading}
             error={errors.amount}
-            helperText={`Debt amount: ${formatCurrency(
+            helperText={`Maximum: ${formatCurrency(
               debt.remainingAmount || debt.amount
-            )}. You can pay more than owed.`}
+            )}`}
             required
           />
 
@@ -248,7 +245,7 @@ const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({
                 className="px-3 py-1 text-sm bg-green-100 text-green-700 rounded-md hover:bg-green-200 transition-colors"
                 disabled={isLoading}
               >
-                Exact Amount (
+                Full Amount (
                 {formatCurrency(debt.remainingAmount || debt.amount)})
               </button>
               <button
@@ -257,31 +254,15 @@ const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({
                   setFormData((prev) => ({
                     ...prev,
                     amount: (
-                      (debt.remainingAmount || debt.amount) * 1.1
+                      (debt.remainingAmount || debt.amount) / 2
                     ).toString(),
                   }))
                 }
                 className="px-3 py-1 text-sm bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200 transition-colors"
                 disabled={isLoading}
               >
-                110% (
-                {formatCurrency((debt.remainingAmount || debt.amount) * 1.1)})
-              </button>
-              <button
-                type="button"
-                onClick={() =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    amount: (
-                      (debt.remainingAmount || debt.amount) * 1.2
-                    ).toString(),
-                  }))
-                }
-                className="px-3 py-1 text-sm bg-purple-100 text-purple-700 rounded-md hover:bg-purple-200 transition-colors"
-                disabled={isLoading}
-              >
-                120% (
-                {formatCurrency((debt.remainingAmount || debt.amount) * 1.2)})
+                Half (
+                {formatCurrency((debt.remainingAmount || debt.amount) / 2)})
               </button>
             </div>
           </div>

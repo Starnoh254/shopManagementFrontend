@@ -3,7 +3,6 @@ import { useSearchParams } from "react-router-dom";
 import { debtService } from "../../services/debtService";
 import type { Debt } from "../../services/debtService";
 import CreateDebtModal from "../debts/CreateDebtModal";
-import RecordPaymentModal from "../payments/RecordPaymentModal";
 import Button from "../ui/Button";
 import LoadingState from "../ui/LoadingState";
 import EmptyState from "../ui/EmptyState";
@@ -24,7 +23,6 @@ const AllDebtsList: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showCreateDebtModal, setShowCreateDebtModal] = useState(false);
-  const [selectedDebt, setSelectedDebt] = useState<Debt | null>(null);
   const [searchParams, setSearchParams] = useSearchParams();
 
   const fetchCustomersWithDebts = async () => {
@@ -73,13 +71,14 @@ const AllDebtsList: React.FC = () => {
     setShowCreateDebtModal(false);
   };
 
-  const handleRecordPayment = (debt: Debt) => {
-    setSelectedDebt(debt);
-  };
-
-  const handlePaymentSuccess = () => {
-    setSelectedDebt(null);
-    fetchCustomersWithDebts(); // Refresh the list
+  const handleMarkAsPaid = async (debtId: number) => {
+    try {
+      await debtService.markAsPaid(debtId);
+      fetchCustomersWithDebts(); // Refresh the list
+    } catch (err) {
+      console.error("Error marking debt as paid:", err);
+      alert("Failed to mark debt as paid. Please try again.");
+    }
   };
 
   const handleDeleteDebt = async (debtId: number) => {
@@ -207,9 +206,9 @@ const AllDebtsList: React.FC = () => {
                       <Button
                         size="sm"
                         variant="success"
-                        onClick={() => handleRecordPayment(debt)}
+                        onClick={() => handleMarkAsPaid(debt.id)}
                       >
-                        Record Payment
+                        Mark Paid
                       </Button>
                       <Button
                         size="sm"
@@ -233,16 +232,6 @@ const AllDebtsList: React.FC = () => {
         onClose={() => setShowCreateDebtModal(false)}
         onSuccess={handleDebtCreated}
       />
-
-      {/* Record Payment Modal */}
-      {selectedDebt && (
-        <RecordPaymentModal
-          isOpen={!!selectedDebt}
-          onClose={() => setSelectedDebt(null)}
-          onSuccess={handlePaymentSuccess}
-          debt={selectedDebt}
-        />
-      )}
     </div>
   );
 };

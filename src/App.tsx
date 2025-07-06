@@ -8,6 +8,11 @@ import CustomerList from "./components/customers/CustomerList";
 import AllDebtsList from "./components/customer/AllDebtsList";
 import PaymentsList from "./components/payments/PaymentsList";
 import Reports from "./components/reports/Reports";
+import SalesModule from "./components/sales/SalesModule";
+import ProductsModule from "./components/products/ProductsModule";
+import ServicesModule from "./components/services/ServicesModule";
+import ServicesList from "./components/services/ServicesList";
+import ServiceDetails from "./components/services/ServiceDetails";
 
 function App() {
   return (
@@ -18,6 +23,14 @@ function App() {
         <Route path="/dashboard" element={<Dashboard />}>
           <Route index element={<DashboardHome />} />{" "}
           {/* /dashboard - shows overview */}
+          <Route path="sales" element={<SalesModule />} />{" "}
+          {/* /dashboard/sales */}
+          <Route path="products" element={<ProductsModule />} />{" "}
+          {/* /dashboard/products */}
+          <Route path="services" element={<ServicesModule />}>
+            <Route index element={<ServicesList />} />
+            <Route path=":id" element={<ServiceDetails />} />
+          </Route>
           <Route path="customers" element={<CustomerList />} />{" "}
           {/* /dashboard/customers */}
           <Route path="debts" element={<AllDebtsList />} />{" "}

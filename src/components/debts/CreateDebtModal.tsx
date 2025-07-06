@@ -30,9 +30,6 @@ const CreateDebtModal: React.FC<CreateDebtModalProps> = ({
     dueDate: "",
   });
   const [customers, setCustomers] = useState<Customer[]>([]);
-  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(
-    null
-  );
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingCustomers, setIsLoadingCustomers] = useState(false);
@@ -51,19 +48,8 @@ const CreateDebtModal: React.FC<CreateDebtModalProps> = ({
   useEffect(() => {
     if (isOpen && !preselectedCustomerId) {
       fetchCustomers();
-    } else if (isOpen && preselectedCustomerId) {
-      // If we have a preselected customer, fetch all customers to get the one with balance info
-      fetchCustomers();
     }
   }, [isOpen, preselectedCustomerId]);
-
-  // Set selected customer when customers are loaded and we have a preselected ID
-  useEffect(() => {
-    if (preselectedCustomerId && customers.length > 0) {
-      const customer = customers.find((c) => c.id === preselectedCustomerId);
-      setSelectedCustomer(customer || null);
-    }
-  }, [preselectedCustomerId, customers]);
 
   const fetchCustomers = async () => {
     setIsLoadingCustomers(true);
@@ -135,12 +121,6 @@ const CreateDebtModal: React.FC<CreateDebtModalProps> = ({
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
 
-    // Track selected customer for credit balance display
-    if (name === "customerId") {
-      const customer = customers.find((c) => c.id === Number(value));
-      setSelectedCustomer(customer || null);
-    }
-
     // Clear error when user starts typing
     if (errors[name]) {
       setErrors((prev) => ({ ...prev, [name]: "" }));
@@ -163,30 +143,6 @@ const CreateDebtModal: React.FC<CreateDebtModalProps> = ({
         dueDate: new Date(formData.dueDate).toISOString(),
       });
 
-      // Show success message with credit application info
-      if (
-        selectedCustomer?.balance?.creditBalance &&
-        selectedCustomer.balance.creditBalance > 0
-      ) {
-        const creditApplied = Math.min(
-          Number(formData.amount),
-          selectedCustomer.balance.creditBalance
-        );
-        const finalAmount = Math.max(
-          0,
-          Number(formData.amount) - selectedCustomer.balance.creditBalance
-        );
-
-        if (creditApplied > 0) {
-          alert(
-            `Debt created successfully! KES ${creditApplied.toFixed(
-              2
-            )} credit was automatically applied. ` +
-              `Final amount owed: KES ${finalAmount.toFixed(2)}`
-          );
-        }
-      }
-
       // Reset form
       setFormData({
         customerId: preselectedCustomerId || 0,
@@ -196,7 +152,6 @@ const CreateDebtModal: React.FC<CreateDebtModalProps> = ({
           .toISOString()
           .split("T")[0],
       });
-      setSelectedCustomer(null);
       setErrors({});
 
       onSuccess(debt);
@@ -230,7 +185,6 @@ const CreateDebtModal: React.FC<CreateDebtModalProps> = ({
           .toISOString()
           .split("T")[0],
       });
-      setSelectedCustomer(null);
       setErrors({});
       onClose();
     }
@@ -303,66 +257,6 @@ const CreateDebtModal: React.FC<CreateDebtModalProps> = ({
             error={errors.amount}
             required
           />
-
-          {/* Credit Application Preview */}
-          {selectedCustomer &&
-            selectedCustomer.balance?.creditBalance &&
-            selectedCustomer.balance.creditBalance > 0 &&
-            formData.amount &&
-            Number(formData.amount) > 0 && (
-              <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-                <h4 className="text-sm font-medium text-blue-900 dark:text-blue-200 mb-2">
-                  💳 Auto Credit Application Preview
-                </h4>
-                <div className="space-y-1 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-blue-700 dark:text-blue-300">
-                      Debt Amount:
-                    </span>
-                    <span className="font-medium">
-                      KES {Number(formData.amount).toFixed(2)}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-blue-700 dark:text-blue-300">
-                      Available Credit:
-                    </span>
-                    <span className="font-medium text-green-600">
-                      KES {selectedCustomer.balance.creditBalance.toFixed(2)}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-blue-700 dark:text-blue-300">
-                      Credit Applied:
-                    </span>
-                    <span className="font-medium text-green-600">
-                      KES{" "}
-                      {Math.min(
-                        Number(formData.amount),
-                        selectedCustomer.balance.creditBalance
-                      ).toFixed(2)}
-                    </span>
-                  </div>
-                  <div className="flex justify-between border-t border-blue-200 dark:border-blue-700 pt-1">
-                    <span className="text-blue-900 dark:text-blue-200 font-medium">
-                      Final Amount Owed:
-                    </span>
-                    <span className="font-bold text-blue-900 dark:text-blue-200">
-                      KES{" "}
-                      {Math.max(
-                        0,
-                        Number(formData.amount) -
-                          selectedCustomer.balance.creditBalance
-                      ).toFixed(2)}
-                    </span>
-                  </div>
-                </div>
-                <p className="text-xs text-blue-600 dark:text-blue-400 mt-2">
-                  💡 Credit will be automatically applied when this debt is
-                  created
-                </p>
-              </div>
-            )}
 
           <Textarea
             name="description"

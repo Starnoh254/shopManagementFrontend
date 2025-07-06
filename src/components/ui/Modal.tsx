@@ -21,22 +21,22 @@ const Modal: React.FC<ModalProps> = ({
     sm: "max-w-sm",
     md: "max-w-md",
     lg: "max-w-lg",
-    xl: "max-w-xl",
+    xl: "max-w-4xl",
   };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-black bg-opacity-40 transition-opacity"
+        className="fixed inset-0 bg-black bg-opacity-50 transition-opacity"
         onClick={onClose}
       />
 
       {/* Modal content */}
       <div
-        className={`relative w-full ${sizeClasses[size]} transform transition-all`}
+        className={`relative w-full ${sizeClasses[size]} max-h-[90vh] overflow-y-auto transform transition-all`}
       >
-        {children}
+        <div className="bg-white rounded-lg shadow-xl p-6">{children}</div>
       </div>
     </div>
   );

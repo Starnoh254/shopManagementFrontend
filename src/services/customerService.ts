@@ -6,16 +6,9 @@ export interface Customer {
   name: string;
   phone: string;
   totalDebt?: number; // Make optional since backend might not provide it
-  creditBalance?: number; // New field for credit balance
   status: "ACTIVE" | "INACTIVE";
   createdAt: string;
   lastPaymentDate?: string;
-  balance?: {
-    totalDebt: number;
-    creditBalance: number;
-    netBalance: number;
-    status: "DEBT" | "CREDIT" | "BALANCED";
-  };
 }
 
 export interface CustomerWithDetails extends Customer {
@@ -54,73 +47,20 @@ export interface UpdateCustomerRequest {
 
 export const customerService = {
   getAll: async (): Promise<Customer[]> => {
-    try {
-      // First, get all customers with their debt information
-      const debtResponse = await api.get("/debts/customers-with-debts");
-      const customersWithDebts = debtResponse.data.customers;
-
-      // Create a map of customer IDs to their total debt
-      const customerDebtMap = new Map<number, number>();
-
-      customersWithDebts.forEach(
-        (customer: {
-          id: number;
-          debts: Array<{
-            amount: number;
-            isPaid: boolean;
-          }>;
-        }) => {
-          // Calculate total unpaid debt for this customer
-          const totalDebt = customer.debts
-            .filter((debt) => !debt.isPaid)
-            .reduce((sum, debt) => sum + debt.amount, 0);
-
-          customerDebtMap.set(customer.id, totalDebt);
-        }
-      );
-
-      // Now get all customers from the main endpoint
-      const customerResponse = await api.get("/customers/all");
-      const allCustomers = customerResponse.data.customers;
-
-      // Merge the debt information with customer data
-      return allCustomers.map(
-        (customer: {
-          id: number;
-          name: string;
-          phone: string;
-          status: "ACTIVE" | "INACTIVE";
-          createdAt: string;
-          lastPaymentDate?: string;
-        }) => ({
-          ...customer,
-          totalDebt: customerDebtMap.get(customer.id) || 0, // Get actual debt or default to 0
-        })
-      );
-    } catch (error) {
-      console.error("Error fetching customers with debt data:", error);
-
-      // Fallback: just get basic customer data without debt info
-      try {
-        const response = await api.get("/customers/all");
-        return response.data.customers.map(
-          (customer: {
-            id: number;
-            name: string;
-            phone: string;
-            status: "ACTIVE" | "INACTIVE";
-            createdAt: string;
-            lastPaymentDate?: string;
-          }) => ({
-            ...customer,
-            totalDebt: 0, // Default to 0 if debt data unavailable
-          })
-        );
-      } catch (fallbackError) {
-        console.error("Error fetching basic customer data:", fallbackError);
-        throw fallbackError;
-      }
-    }
+    const response = await api.get("/customers/all");
+    // Transform the response to include totalDebt default value
+    return response.data.customers.map((customer: {
+      id: number;
+      name: string;
+      phone: string;
+      status: "ACTIVE" | "INACTIVE";
+      createdAt: string;
+      lastPaymentDate?: string;
+      totalDebt?: number;
+    }) => ({
+      ...customer,
+      totalDebt: customer.totalDebt || 0, // Default to 0 if not provided by backend
+    }));
   },
 
   getById: async (id: number): Promise<CustomerWithDetails> => {

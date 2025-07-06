@@ -36,6 +36,30 @@ const Dashboard: React.FC = () => {
             Dashboard Home
           </Link>
           <Link
+            to="sales"
+            className="flex items-center px-4 py-2 rounded hover:bg-primary-light hover:text-white dark:hover:bg-primary-dark transition-colors"
+            onClick={handleLinkClick}
+          >
+            <span className="mr-3">💰</span>
+            Sales Management
+          </Link>
+          <Link
+            to="products"
+            className="flex items-center px-4 py-2 rounded hover:bg-primary-light hover:text-white dark:hover:bg-primary-dark transition-colors"
+            onClick={handleLinkClick}
+          >
+            <span className="mr-3">📦</span>
+            Products
+          </Link>
+          <Link
+            to="services"
+            className="flex items-center px-4 py-2 rounded hover:bg-primary-light hover:text-white dark:hover:bg-primary-dark transition-colors"
+            onClick={handleLinkClick}
+          >
+            <span className="mr-3">🔧</span>
+            Services
+          </Link>
+          <Link
             to="customers"
             className="flex items-center px-4 py-2 rounded hover:bg-primary-light hover:text-white dark:hover:bg-primary-dark transition-colors"
             onClick={handleLinkClick}
@@ -48,7 +72,7 @@ const Dashboard: React.FC = () => {
             className="flex items-center px-4 py-2 rounded hover:bg-primary-light hover:text-white dark:hover:bg-primary-dark transition-colors"
             onClick={handleLinkClick}
           >
-            <span className="mr-3">💰</span>
+            <span className="mr-3">💸</span>
             Debts
           </Link>
           <Link
@@ -74,8 +98,32 @@ const Dashboard: React.FC = () => {
               Quick Actions
             </h3>
             <Link
-              to="customers?action=create"
+              to="sales"
               className="flex items-center px-4 py-2 rounded hover:bg-green-600 hover:text-white transition-colors text-green-600 dark:text-green-400"
+              onClick={handleLinkClick}
+            >
+              <span className="mr-3">🛒</span>
+              New Sale
+            </Link>
+            <Link
+              to="products"
+              className="flex items-center px-4 py-2 rounded hover:bg-blue-600 hover:text-white transition-colors text-blue-600 dark:text-blue-400"
+              onClick={handleLinkClick}
+            >
+              <span className="mr-3">📦</span>
+              Add Product
+            </Link>
+            <Link
+              to="services"
+              className="flex items-center px-4 py-2 rounded hover:bg-indigo-600 hover:text-white transition-colors text-indigo-600 dark:text-indigo-400"
+              onClick={handleLinkClick}
+            >
+              <span className="mr-3">🔧</span>
+              Add Service
+            </Link>
+            <Link
+              to="customers?action=create"
+              className="flex items-center px-4 py-2 rounded hover:bg-purple-600 hover:text-white transition-colors text-purple-600 dark:text-purple-400"
               onClick={handleLinkClick}
             >
               <span className="mr-3">➕</span>
@@ -83,7 +131,7 @@ const Dashboard: React.FC = () => {
             </Link>
             <Link
               to="debts?action=create"
-              className="flex items-center px-4 py-2 rounded hover:bg-blue-600 hover:text-white transition-colors text-blue-600 dark:text-blue-400"
+              className="flex items-center px-4 py-2 rounded hover:bg-orange-600 hover:text-white transition-colors text-orange-600 dark:text-orange-400"
               onClick={handleLinkClick}
             >
               <span className="mr-3">💸</span>
@@ -91,7 +139,7 @@ const Dashboard: React.FC = () => {
             </Link>
             <Link
               to="payments?action=create"
-              className="flex items-center px-4 py-2 rounded hover:bg-purple-600 hover:text-white transition-colors text-purple-600 dark:text-purple-400"
+              className="flex items-center px-4 py-2 rounded hover:bg-teal-600 hover:text-white transition-colors text-teal-600 dark:text-teal-400"
               onClick={handleLinkClick}
             >
               <span className="mr-3">💵</span>
