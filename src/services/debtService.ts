@@ -172,6 +172,26 @@ export const debtService = {
     return response.data.analytics;
   },
 
+  // Get all debts (GET /debts)
+  getAll: async (): Promise<Debt[]> => {
+    try {
+      // Since there's no direct /debts endpoint, we'll get all customers with debts
+      // and flatten the results to get all debts
+      const customersWithDebts =
+        await debtService.getCustomersWithUnpaidDebts();
+      const allDebts = customersWithDebts.flatMap((customer) =>
+        customer.unpaidDebts.map((debt) => ({
+          ...debt,
+          customerName: customer.name,
+        }))
+      );
+      return allDebts;
+    } catch (error) {
+      console.error("Error fetching all debts:", error);
+      return [];
+    }
+  },
+
   // Legacy aliases for backward compatibility
   create: async (debtData: CreateDebtRequest): Promise<Debt> => {
     return debtService.add(debtData);

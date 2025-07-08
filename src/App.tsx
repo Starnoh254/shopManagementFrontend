@@ -6,6 +6,7 @@ import Dashboard from "./components/dashboard/Dashboard";
 import DashboardHome from "./components/dashboard/DashboardHome";
 import CustomerList from "./components/customers/CustomerList";
 import AllDebtsList from "./components/customer/AllDebtsList";
+import DebtsModule from "./components/debts/DebtsModule";
 import PaymentsList from "./components/payments/PaymentsList";
 import Reports from "./components/reports/Reports";
 import SalesModule from "./components/sales/SalesModule";
@@ -33,8 +34,10 @@ function App() {
           </Route>
           <Route path="customers" element={<CustomerList />} />{" "}
           {/* /dashboard/customers */}
-          <Route path="debts" element={<AllDebtsList />} />{" "}
+          <Route path="debts" element={<DebtsModule />} />{" "}
           {/* /dashboard/debts */}
+          <Route path="debts/customers" element={<AllDebtsList />} />{" "}
+          {/* /dashboard/debts/customers - for customer-centric view */}
           <Route path="payments" element={<PaymentsList />} />{" "}
           {/* /dashboard/payments */}
           <Route path="reports" element={<Reports />} />{" "}

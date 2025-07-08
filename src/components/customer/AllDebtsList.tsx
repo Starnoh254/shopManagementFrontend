@@ -3,6 +3,8 @@ import { useSearchParams } from "react-router-dom";
 import { debtService } from "../../services/debtService";
 import type { Debt } from "../../services/debtService";
 import CreateDebtModal from "../debts/CreateDebtModal";
+import DebtCard from "../debts/DebtCard";
+import RecordPaymentModal from "../payments/RecordPaymentModal";
 import Button from "../ui/Button";
 import LoadingState from "../ui/LoadingState";
 import EmptyState from "../ui/EmptyState";
@@ -23,6 +25,8 @@ const AllDebtsList: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showCreateDebtModal, setShowCreateDebtModal] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [selectedDebt, setSelectedDebt] = useState<Debt | null>(null);
   const [searchParams, setSearchParams] = useSearchParams();
 
   const fetchCustomersWithDebts = async () => {
@@ -71,14 +75,15 @@ const AllDebtsList: React.FC = () => {
     setShowCreateDebtModal(false);
   };
 
-  const handleMarkAsPaid = async (debtId: number) => {
-    try {
-      await debtService.markAsPaid(debtId);
-      fetchCustomersWithDebts(); // Refresh the list
-    } catch (err) {
-      console.error("Error marking debt as paid:", err);
-      alert("Failed to mark debt as paid. Please try again.");
-    }
+  const handleRecordPayment = (debt: Debt) => {
+    setSelectedDebt(debt);
+    setShowPaymentModal(true);
+  };
+
+  const handlePaymentRecorded = () => {
+    setShowPaymentModal(false);
+    setSelectedDebt(null);
+    fetchCustomersWithDebts(); // Refresh the list
   };
 
   const handleDeleteDebt = async (debtId: number) => {
@@ -98,10 +103,6 @@ const AllDebtsList: React.FC = () => {
       style: "currency",
       currency: "KES",
     }).format(amount);
-  };
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString();
   };
 
   if (isLoading) {
@@ -183,42 +184,16 @@ const AllDebtsList: React.FC = () => {
                   Unpaid Debts ({customer.unpaidDebts.length})
                 </h4>
                 {customer.unpaidDebts.map((debt) => (
-                  <div
+                  <DebtCard
                     key={debt.id}
-                    className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-lg border"
-                  >
-                    <div className="flex-1">
-                      <p className="font-medium text-gray-900 dark:text-white">
-                        {debt.description}
-                      </p>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">
-                        Due: {formatDate(debt.dueDate)} • Amount:{" "}
-                        {formatCurrency(debt.amount)}
-                      </p>
-                      {debt.remainingAmount &&
-                        debt.remainingAmount !== debt.amount && (
-                          <p className="text-sm text-yellow-600 dark:text-yellow-400">
-                            Remaining: {formatCurrency(debt.remainingAmount)}
-                          </p>
-                        )}
-                    </div>
-                    <div className="flex gap-2 ml-4">
-                      <Button
-                        size="sm"
-                        variant="success"
-                        onClick={() => handleMarkAsPaid(debt.id)}
-                      >
-                        Mark Paid
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="danger"
-                        onClick={() => handleDeleteDebt(debt.id)}
-                      >
-                        Delete
-                      </Button>
-                    </div>
-                  </div>
+                    debt={{
+                      ...debt,
+                      customerName: customer.name,
+                    }}
+                    onPayment={handleRecordPayment}
+                    onDelete={() => handleDeleteDebt(debt.id)}
+                    showCustomer={false}
+                  />
                 ))}
               </div>
             </Card>
@@ -231,6 +206,14 @@ const AllDebtsList: React.FC = () => {
         isOpen={showCreateDebtModal}
         onClose={() => setShowCreateDebtModal(false)}
         onSuccess={handleDebtCreated}
+      />
+
+      {/* Record Payment Modal */}
+      <RecordPaymentModal
+        isOpen={showPaymentModal}
+        onClose={() => setShowPaymentModal(false)}
+        onSuccess={handlePaymentRecorded}
+        debt={selectedDebt}
       />
     </div>
   );
