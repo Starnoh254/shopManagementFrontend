@@ -21,6 +21,8 @@ const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({
   debt,
 }) => {
   const [formData, setFormData] = useState({
+    customerId: "",
+    debtId: "",
     amount: "",
     method: "CASH" as "CASH" | "MOBILE_MONEY",
     description: "",
@@ -30,6 +32,11 @@ const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({
 
   const validateForm = (): boolean => {
     const newErrors: { [key: string]: string } = {};
+
+    // For standalone payments (no debt), customerId is required
+    if (!debt && !formData.customerId) {
+      newErrors.customerId = "Customer is required";
+    }
 
     if (!formData.amount) {
       newErrors.amount = "Payment amount is required";
@@ -65,24 +72,39 @@ const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!debt || !validateForm()) {
+    if (!validateForm()) {
       return;
     }
 
     setIsLoading(true);
     try {
-      const payment = await paymentService.create({
-        customerId: debt.customerId,
-        debtId: debt.id,
-        amount: Number(formData.amount),
-        method: formData.method as "CASH" | "MOBILE_MONEY",
-        description:
-          (formData.description || "").trim() ||
-          `Payment for ${debt.description}`,
-      });
+      let payment: Payment;
+
+      if (debt) {
+        // Payment for a specific debt
+        payment = await paymentService.create({
+          customerId: debt.customerId,
+          debtId: debt.id,
+          amount: Number(formData.amount),
+          method: formData.method as "CASH" | "MOBILE_MONEY",
+          description:
+            (formData.description || "").trim() ||
+            `Payment for ${debt.description}`,
+        });
+      } else {
+        // Standalone payment (credit, overpayment, etc.)
+        payment = await paymentService.recordStandalone({
+          customerId: Number(formData.customerId),
+          amount: Number(formData.amount),
+          method: formData.method as "CASH" | "MOBILE_MONEY",
+          description: (formData.description || "").trim() || "General payment",
+        });
+      }
 
       // Reset form
       setFormData({
+        customerId: "",
+        debtId: "",
         amount: "",
         method: "CASH",
         description: "",
@@ -103,6 +125,8 @@ const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({
   const handleClose = () => {
     if (!isLoading) {
       setFormData({
+        customerId: "",
+        debtId: "",
         amount: "",
         method: "CASH",
         description: "",
@@ -139,50 +163,79 @@ const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({
           </button>
         </div>
 
-        {/* Debt Information */}
-        <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 mb-6">
-          <h3 className="font-medium text-gray-900 dark:text-white mb-2">
-            Debt Details
-          </h3>
-          <div className="space-y-1 text-sm">
-            {debt.customerName && (
+        {/* Debt Information or Customer Selection */}
+        {debt ? (
+          <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 mb-6">
+            <h3 className="font-medium text-gray-900 dark:text-white mb-2">
+              Debt Details
+            </h3>
+            <div className="space-y-1 text-sm">
+              {debt.customerName && (
+                <div className="flex justify-between">
+                  <span className="text-gray-600 dark:text-gray-400">
+                    Customer:
+                  </span>
+                  <span className="font-medium text-gray-900 dark:text-white">
+                    {debt.customerName}
+                  </span>
+                </div>
+              )}
               <div className="flex justify-between">
                 <span className="text-gray-600 dark:text-gray-400">
-                  Customer:
+                  Description:
                 </span>
                 <span className="font-medium text-gray-900 dark:text-white">
-                  {debt.customerName}
+                  {debt.description}
                 </span>
               </div>
-            )}
-            <div className="flex justify-between">
-              <span className="text-gray-600 dark:text-gray-400">
-                Description:
-              </span>
-              <span className="font-medium text-gray-900 dark:text-white">
-                {debt.description}
-              </span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-gray-600 dark:text-gray-400">
-                Total Amount:
-              </span>
-              <span className="font-medium text-gray-900 dark:text-white">
-                {formatCurrency(debt.amount)}
-              </span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-gray-600 dark:text-gray-400">
-                Remaining:
-              </span>
-              <span className="font-medium text-red-600 dark:text-red-400">
-                {formatCurrency(debt.remainingAmount || debt.amount)}
-              </span>
+              <div className="flex justify-between">
+                <span className="text-gray-600 dark:text-gray-400">
+                  Total Amount:
+                </span>
+                <span className="font-medium text-gray-900 dark:text-white">
+                  {formatCurrency(debt.amount)}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600 dark:text-gray-400">
+                  Remaining:
+                </span>
+                <span className="font-medium text-red-600 dark:text-red-400">
+                  {formatCurrency(debt.remainingAmount || debt.amount)}
+                </span>
+              </div>
             </div>
           </div>
-        </div>
+        ) : (
+          <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 mb-6">
+            <h3 className="font-medium text-gray-900 dark:text-white mb-2">
+              Standalone Payment
+            </h3>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Recording a payment not tied to a specific debt (e.g., credit,
+              overpayment)
+            </p>
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Customer Selection for Standalone Payments */}
+          {!debt && (
+            <Input
+              type="number"
+              name="customerId"
+              label="Customer ID"
+              value={formData.customerId}
+              onChange={handleInputChange}
+              min="1"
+              placeholder="Enter customer ID"
+              disabled={isLoading}
+              error={errors.customerId}
+              required
+              helperText="Enter the ID of the customer for this payment"
+            />
+          )}
+
           <Input
             type="number"
             name="amount"
@@ -190,14 +243,18 @@ const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({
             value={formData.amount}
             onChange={handleInputChange}
             min="0"
-            max={debt.remainingAmount || debt.amount}
+            max={debt ? debt.remainingAmount || debt.amount : undefined}
             step="0.01"
             placeholder="0.00"
             disabled={isLoading}
             error={errors.amount}
-            helperText={`Maximum: ${formatCurrency(
-              debt.remainingAmount || debt.amount
-            )}`}
+            helperText={
+              debt
+                ? `Maximum: ${formatCurrency(
+                    debt.remainingAmount || debt.amount
+                  )}`
+                : "Enter the payment amount"
+            }
             required
           />
 

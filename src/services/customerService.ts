@@ -6,9 +6,16 @@ export interface Customer {
   name: string;
   phone: string;
   totalDebt?: number; // Make optional since backend might not provide it
+  creditBalance?: number; // New field for credit balance
   status: "ACTIVE" | "INACTIVE";
   createdAt: string;
   lastPaymentDate?: string;
+  balance?: {
+    totalDebt: number;
+    creditBalance: number;
+    netBalance: number;
+    status: "DEBT" | "CREDIT" | "BALANCED";
+  };
 }
 
 export interface CustomerWithDetails extends Customer {
@@ -48,19 +55,41 @@ export interface UpdateCustomerRequest {
 export const customerService = {
   getAll: async (): Promise<Customer[]> => {
     const response = await api.get("/customers/all");
-    // Transform the response to include totalDebt default value
-    return response.data.customers.map((customer: {
-      id: number;
-      name: string;
-      phone: string;
-      status: "ACTIVE" | "INACTIVE";
-      createdAt: string;
-      lastPaymentDate?: string;
-      totalDebt?: number;
-    }) => ({
-      ...customer,
-      totalDebt: customer.totalDebt || 0, // Default to 0 if not provided by backend
-    }));
+    // Transform the response to include balance information and defaults
+    return response.data.customers.map(
+      (customer: {
+        id: number;
+        name: string;
+        phone: string;
+        status: "ACTIVE" | "INACTIVE";
+        createdAt: string;
+        lastPaymentDate?: string;
+        totalDebt?: number;
+        creditBalance?: number;
+        balance?: {
+          totalDebt: number;
+          creditBalance: number;
+          netBalance: number;
+          status: "DEBT" | "CREDIT" | "BALANCED";
+        };
+      }) => ({
+        ...customer,
+        totalDebt: customer.totalDebt || 0, // Default to 0 if not provided by backend
+        creditBalance: customer.creditBalance || 0, // Default to 0 if not provided
+        // If balance object is provided by backend, use it; otherwise create a basic one
+        balance: customer.balance || {
+          totalDebt: customer.totalDebt || 0,
+          creditBalance: customer.creditBalance || 0,
+          netBalance: (customer.creditBalance || 0) - (customer.totalDebt || 0),
+          status:
+            (customer.creditBalance || 0) > (customer.totalDebt || 0)
+              ? "CREDIT"
+              : (customer.totalDebt || 0) > (customer.creditBalance || 0)
+              ? "DEBT"
+              : "BALANCED",
+        },
+      })
+    );
   },
 
   getById: async (id: number): Promise<CustomerWithDetails> => {

@@ -33,6 +33,13 @@ export interface CreatePaymentRequest {
   description?: string;
 }
 
+export interface CreateStandalonePaymentRequest {
+  customerId: number;
+  amount: number;
+  method: "CASH" | "MOBILE_MONEY";
+  description?: string;
+}
+
 export interface UpdatePaymentRequest {
   amount?: number;
   method?: "CASH" | "MOBILE_MONEY";
@@ -50,9 +57,23 @@ export interface PaymentSummary {
 }
 
 export const paymentService = {
+  // Get all payments (GET /payments)
+  getAll: async (): Promise<Payment[]> => {
+    const response = await api.get("/payments");
+    return response.data.payments;
+  },
+
   // Record a new payment (POST /payments/record)
   record: async (paymentData: CreatePaymentRequest): Promise<Payment> => {
     const response = await api.post("/payments/record", paymentData);
+    return response.data.payment;
+  },
+
+  // Record a standalone payment (customer credit, overpayment, etc.)
+  recordStandalone: async (
+    paymentData: CreateStandalonePaymentRequest
+  ): Promise<Payment> => {
+    const response = await api.post("/payments/record-standalone", paymentData);
     return response.data.payment;
   },
 

@@ -51,20 +51,100 @@ const CustomerCard: React.FC<CustomerCardProps> = ({
       </div>
 
       <div className="space-y-2 mb-4">
-        <div className="flex justify-between">
-          <span className="text-sm text-gray-600 dark:text-gray-400">
-            Total Debt:
-          </span>
-          <span
-            className={`font-medium ${
-              (customer.totalDebt || 0) > 0
-                ? "text-red-600 dark:text-red-400"
-                : "text-green-600 dark:text-green-400"
-            }`}
-          >
-            {formatCurrency(customer.totalDebt || 0)}
-          </span>
-        </div>
+        {/* Balance Information */}
+        {customer.balance ? (
+          // Use detailed balance if available
+          <div className="space-y-2">
+            <div className="flex justify-between">
+              <span className="text-sm text-gray-600 dark:text-gray-400">
+                Balance Status:
+              </span>
+              <span
+                className={`font-medium px-2 py-1 rounded text-xs ${
+                  customer.balance.status === "CREDIT"
+                    ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
+                    : customer.balance.status === "DEBT"
+                    ? "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
+                    : "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300"
+                }`}
+              >
+                {customer.balance.status}
+              </span>
+            </div>
+
+            {customer.balance.totalDebt > 0 && (
+              <div className="flex justify-between">
+                <span className="text-sm text-gray-600 dark:text-gray-400">
+                  Total Debt:
+                </span>
+                <span className="font-medium text-red-600 dark:text-red-400">
+                  {formatCurrency(customer.balance.totalDebt)}
+                </span>
+              </div>
+            )}
+
+            {customer.balance.creditBalance >= 0 && (
+              <div className="flex justify-between">
+                <span className="text-sm text-gray-600 dark:text-gray-400">
+                  Credit Balance:
+                </span>
+                <span className="font-medium text-green-600 dark:text-green-400">
+                  {customer.balance.creditBalance > 0 ? "+" : ""}
+                  {formatCurrency(customer.balance.creditBalance)}
+                </span>
+              </div>
+            )}
+
+            <div className="flex justify-between font-medium border-t pt-2">
+              <span className="text-sm text-gray-700 dark:text-gray-300">
+                Net Balance:
+              </span>
+              <span
+                className={`${
+                  customer.balance.netBalance > 0
+                    ? "text-green-600 dark:text-green-400"
+                    : customer.balance.netBalance < 0
+                    ? "text-red-600 dark:text-red-400"
+                    : "text-gray-600 dark:text-gray-400"
+                }`}
+              >
+                {customer.balance.netBalance > 0 ? "+" : ""}
+                {formatCurrency(Math.abs(customer.balance.netBalance))}
+              </span>
+            </div>
+          </div>
+        ) : (
+          // Fallback to simple debt display
+          <>
+            <div className="flex justify-between">
+              <span className="text-sm text-gray-600 dark:text-gray-400">
+                Total Debt:
+              </span>
+              <span
+                className={`font-medium ${
+                  (customer.totalDebt || 0) > 0
+                    ? "text-red-600 dark:text-red-400"
+                    : "text-green-600 dark:text-green-400"
+                }`}
+              >
+                {formatCurrency(customer.totalDebt || 0)}
+              </span>
+            </div>
+
+            {customer.creditBalance !== undefined &&
+              customer.creditBalance >= 0 && (
+                <div className="flex justify-between">
+                  <span className="text-sm text-gray-600 dark:text-gray-400">
+                    Credit Balance:
+                  </span>
+                  <span className="font-medium text-green-600 dark:text-green-400">
+                    {customer.creditBalance > 0 ? "+" : ""}
+                    {formatCurrency(customer.creditBalance)}
+                  </span>
+                </div>
+              )}
+          </>
+        )}
 
         <div className="flex justify-between">
           <span className="text-sm text-gray-600 dark:text-gray-400">
