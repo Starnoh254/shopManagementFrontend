@@ -28,6 +28,7 @@ const DebtsModule: React.FC = () => {
     try {
       const data = await debtService.getAll();
       setDebts(data);
+      console.log(`Here are the debts : ${JSON.stringify(data)}`)
     } catch (err) {
       const message =
         err instanceof Error &&

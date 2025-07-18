@@ -42,14 +42,8 @@ const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({
       newErrors.amount = "Payment amount is required";
     } else if (Number(formData.amount) <= 0) {
       newErrors.amount = "Payment amount must be greater than 0";
-    } else if (
-      debt &&
-      Number(formData.amount) > (debt.remainingAmount || debt.amount)
-    ) {
-      newErrors.amount = `Payment cannot exceed remaining debt of ${
-        debt.remainingAmount || debt.amount
-      }`;
     }
+    // Note: Removed max payment validation to allow overpayments (creating credit balance)
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -143,7 +137,7 @@ const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({
     }).format(amount);
   };
 
-  if (!debt) {
+  if (!isOpen) {
     return null;
   }
 
@@ -243,16 +237,15 @@ const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({
             value={formData.amount}
             onChange={handleInputChange}
             min="0"
-            max={debt ? debt.remainingAmount || debt.amount : undefined}
             step="0.01"
             placeholder="0.00"
             disabled={isLoading}
             error={errors.amount}
             helperText={
               debt
-                ? `Maximum: ${formatCurrency(
+                ? `Debt amount: ${formatCurrency(
                     debt.remainingAmount || debt.amount
-                  )}`
+                  )} (you can pay more to create credit balance)`
                 : "Enter the payment amount"
             }
             required
@@ -286,43 +279,69 @@ const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({
           />
 
           {/* Quick Amount Buttons */}
-          <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Quick Amount
-            </label>
-            <div className="flex gap-2 flex-wrap">
-              <button
-                type="button"
-                onClick={() =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    amount: (debt.remainingAmount || debt.amount).toString(),
-                  }))
-                }
-                className="px-3 py-1 text-sm bg-green-100 text-green-700 rounded-md hover:bg-green-200 transition-colors"
-                disabled={isLoading}
-              >
-                Full Amount (
-                {formatCurrency(debt.remainingAmount || debt.amount)})
-              </button>
-              <button
-                type="button"
-                onClick={() =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    amount: (
-                      (debt.remainingAmount || debt.amount) / 2
-                    ).toString(),
-                  }))
-                }
-                className="px-3 py-1 text-sm bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200 transition-colors"
-                disabled={isLoading}
-              >
-                Half (
-                {formatCurrency((debt.remainingAmount || debt.amount) / 2)})
-              </button>
+          {debt && (
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                Quick Amount
+              </label>
+              <div className="flex gap-2 flex-wrap">
+                <button
+                  type="button"
+                  onClick={() =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      amount: (debt.remainingAmount || debt.amount).toString(),
+                    }))
+                  }
+                  className="px-3 py-1 text-sm bg-green-100 text-green-700 rounded-md hover:bg-green-200 transition-colors"
+                  disabled={isLoading}
+                >
+                  Exact Amount (
+                  {formatCurrency(debt.remainingAmount || debt.amount)})
+                </button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      amount: (
+                        (debt.remainingAmount || debt.amount) / 2
+                      ).toString(),
+                    }))
+                  }
+                  className="px-3 py-1 text-sm bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200 transition-colors"
+                  disabled={isLoading}
+                >
+                  Half (
+                  {formatCurrency((debt.remainingAmount || debt.amount) / 2)})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const roundAmount =
+                      Math.ceil((debt.remainingAmount || debt.amount) / 100) *
+                      100;
+                    setFormData((prev) => ({
+                      ...prev,
+                      amount: roundAmount.toString(),
+                    }));
+                  }}
+                  className="px-3 py-1 text-sm bg-purple-100 text-purple-700 rounded-md hover:bg-purple-200 transition-colors"
+                  disabled={isLoading}
+                >
+                  Round Up (
+                  {formatCurrency(
+                    Math.ceil((debt.remainingAmount || debt.amount) / 100) * 100
+                  )}
+                  )
+                </button>
+              </div>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                💡 Tip: Paying more than the debt amount creates credit balance
+                for future purchases
+              </p>
             </div>
-          </div>
+          )}
 
           {errors.submit && (
             <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md">
